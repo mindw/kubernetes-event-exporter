@@ -2,7 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: event-exporter
-  namespace: monitoring
+  namespace: kube-system
+  labels:
+    app: event-exporter
 spec:
   replicas: 1
   template:
@@ -12,19 +14,26 @@ spec:
         version: v1
     spec:
       serviceAccountName: event-exporter
+      enableServiceLinks: false
       containers:
-        - name: event-exporter
-          image: opsgenie/kubernetes-event-exporter:0.9
-          imagePullPolicy: IfNotPresent
-          args:
-            - -conf=/data/config.yaml
-          volumeMounts:
-            - mountPath: /data
-              name: cfg
+      - name: event-exporter
+        image: opsgenie/kubernetes-event-exporter:0.9
+        args:
+        - -conf=/data/config.yaml
+        volumeMounts:
+        - mountPath: /data
+          name: cfg
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 25m
+            memory: 64Mi
       volumes:
-        - name: cfg
-          configMap:
-            name: event-exporter-cfg
+      - name: cfg
+        configMap:
+          name: event-exporter-cfg
   selector:
     matchLabels:
       app: event-exporter
